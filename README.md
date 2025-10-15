@@ -189,7 +189,7 @@ sudo usermod -a -G dialout user
 
 ## Navigate to your project folder
 ```bash
-cd /mnt/data_storage/X_logger
+cd /mnt/data_storage/Modbus_loggers
 ```
 
 ## Initialize a Git repository (only once)
@@ -204,7 +204,7 @@ git branch -m main
 
 ## Add your GitHub remote
 ```bash
-git remote add origin https://github.com/<your_username>/X_logger.git
+git remote add origin https://github.com/<your_username>/Modbus_loggers.git
 ```
 
 ## Create a .gitignore file
@@ -244,7 +244,7 @@ git push
 
 ## To clone this repo on another computer
 ```bash
-git clone https://github.com/<your_username>/X_logger.git
+git clone https://github.com/<your_username>/Modbus_loggers.git
 ```
 
 
