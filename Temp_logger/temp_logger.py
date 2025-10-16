@@ -6,7 +6,7 @@ import sys
 # === Add parent directory to sys.path for imports ===
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # === Import self-defined common utilities ===
-from utils.common_utils import get_csv_path, show_disk_usage_bar, get_log_path, cleanup_old_logs, log_rotation, Tee
+from utils.common_utils import get_csv_path_daily, show_disk_usage_bar, get_log_path, cleanup_old_logs, log_rotation, Tee
 from utils.device_specific_func import tp_700
 
 # === Modbus connection setup ===
@@ -24,7 +24,7 @@ LOG_RETENTION_DAYS = 30
 BASE_FOLDER = "/mnt/data_storage/Modbus_loggers/Temp_logger"
 LOG_FOLDER = os.path.join(BASE_FOLDER, "logs")
 
-FILE_SUFFIX = "temp_log"
+FILE_SUFFIX = "temp"
 HEADER = ["Datetime", "Device_ID"] + [f"CH{i+1}_Temp" for i in range(24)] + ["Error"]
 
 
@@ -50,7 +50,7 @@ try:
         # Check for log rotation (new day)
         current_log_date, log_file = log_rotation(LOG_FOLDER, log_file, current_log_date, LOG_RETENTION_DAYS)
 
-        CSV_FILE = get_csv_path(base_folder = BASE_FOLDER, file_suffix = FILE_SUFFIX, header = HEADER)
+        CSV_FILE = get_csv_path_daily(base_folder = BASE_FOLDER, file_suffix = FILE_SUFFIX, header = HEADER)
         
         show_disk_usage_bar("/")
         show_disk_usage_bar("/mnt/data_storage")

@@ -21,8 +21,39 @@ class Tee:
             f.flush()
 
 
+def get_csv_path_daily(base_folder: str, file_suffix: str, header: list) -> str:
+    """
+    Create and return the CSV path for the current day, organized as:
+        base_folder/data/YYYY/MM/YYYY-MM-DD_suffix.csv
 
-def get_csv_path(base_folder: str, file_suffix: str, header: list) -> str:
+    Args:
+        base_folder (str): Base directory where the 'data' folder will be created.
+        file_suffix (str): Short identifier for the file (e.g., "temp_log", "dc_meter").
+        header (list): List of column headers for the CSV file.
+
+    Returns:
+        str: Full path to the CSV file.
+    """
+    now = datetime.now()
+    
+    # Folder hierarchy: data/YYYY/MM/
+    year_folder = os.path.join(base_folder, "data", now.strftime("%Y"))
+    month_folder = os.path.join(year_folder, now.strftime("%m"))
+    os.makedirs(month_folder, exist_ok=True)
+
+    # Daily file name: YYYY-MM-DD_suffix.csv
+    day_name = now.strftime("%Y-%m-%d")
+    csv_path = os.path.join(month_folder, f"{day_name}_{file_suffix}.csv")
+
+    # Create CSV file with header if needed
+    if not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0:
+        with open(csv_path, mode="w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+
+    return csv_path
+
+def get_csv_path_monthly(base_folder: str, file_suffix: str, header: list) -> str:
     """
     Create and return the CSV path for the current month, under year-based folders.
 
@@ -47,7 +78,6 @@ def get_csv_path(base_folder: str, file_suffix: str, header: list) -> str:
             writer.writerow(header)
 
     return csv_path
-
 
 def cleanup_old_logs(log_folder: str, log_retention_days: int) -> None:
     """
