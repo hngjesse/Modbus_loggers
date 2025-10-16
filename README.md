@@ -238,6 +238,7 @@ git push -u origin main
 ```bash
 git add .
 git commit -m "Updated decoding and service config"
+git remote set-url origin git@github.com:hngjesse/Modbus_loggers.git
 git push
 ```
 ---
