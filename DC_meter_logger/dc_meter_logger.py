@@ -24,7 +24,7 @@ TIME_STEP = 2  # seconds between each read cycle
 
 LOG_RETENTION_DAYS = 30  # keep only last 30 days of log files
 
-BASE_FOLDER = "/mnt/data_storage/Modbus_loggers_sandbox/DC_meter_logger"
+BASE_FOLDER = "/mnt/data_storage/Modbus_loggers/DC_meter_logger"
 LOG_FOLDER = os.path.join(BASE_FOLDER, "logs")
 
 FILE_SUFFIX = "dc_meter_log"
