@@ -30,13 +30,17 @@ DC_meter_logger/
 │   │   └── ...
 │   ├── data/
 │       ├── 2025/
-│       │   ├── 2025-10_dc_meter_log.csv
-│       │   ├── 2025-11_dc_meter_log.csv
-│       │   └── ...
+│       │       ├── 10/
+│       │       │   ├── 2025-10-17_dc_meter.csv
+│       │       │   ├── 2025-10-18_dc_meter.csv
+│       │       │   └── ...
+│       │       ├── 11/
+│       │       │   ├── 2025-11-1_dc_meter.csv
+│       │       │   ├── 2025-11-2_dc_meter.csv
+│       │       │   └── ...
+│       │       └── ...
 │       ├──2026/
-│       │   ├── 2025-10_dc_meter_log.csv
-│       │   ├── 2025-11_dc_meter_log.csv
-│       │   └── ...
+│       │       └── ...
 │       └── ...
 Temp_logger/
 │   ├── temp_logger.py
@@ -46,13 +50,17 @@ Temp_logger/
 │   │   └── ...
 │   ├── data/
 │       ├── 2025/
-│       │   ├── 2025-10_temp_log.csv
-│       │   ├── 2025-11_temp_log.csv
-│       │   └── ...
+│       │       ├── 10/
+│       │       │   ├── 2025-10-17_temp.csv
+│       │       │   ├── 2025-10-18_temp.csv
+│       │       │   └── ...
+│       │       ├── 11/
+│       │       │   ├── 2025-11-1_temp.csv
+│       │       │   ├── 2025-11-2_temp.csv
+│       │       │   └── ...
+│       │       └── ...
 │       ├──2026/
-│       │   ├── 2025-10_temp_log.csv
-│       │   ├── 2025-11_temp_log.csv
-│       │   └── ...
+│       │       └── ...
 │       └── ...
 utils/
     ├── __init__.py
@@ -66,7 +74,7 @@ utils/
 
 ### Prerequisites
 - Python 3.8+  
-- `pymodbus` library installed  
+- `pymodbus` version 3.11.3 library installed  
 
 ```bash
 pip install pymodbus
