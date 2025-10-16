@@ -1,15 +1,13 @@
 from pymodbus.client import ModbusSerialClient
 from datetime import datetime
-import csv
 import os
 import time
 import sys
-import struct
 # === Add parent directory to sys.path for imports ===
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # === Import self-defined common utilities ===
 from utils.common_utils import get_csv_path, show_disk_usage_bar, get_log_path, cleanup_old_logs, log_rotation, Tee
-
+from utils.device_specific_func import tp_700
 
 # === Modbus connection setup ===
 client = ModbusSerialClient(port="/dev/ttyS3", baudrate=9600, timeout=0.2, stopbits=1, bytesize=8)
@@ -23,7 +21,7 @@ TIME_STEP = 2            # seconds between each read
 
 LOG_RETENTION_DAYS = 30
 
-BASE_FOLDER = "/mnt/data_storage/Modbus_loggers/Temp_logger"
+BASE_FOLDER = "/mnt/data_storage/Modbus_loggers_sandbox/Temp_logger"
 LOG_FOLDER = os.path.join(BASE_FOLDER, "logs")
 
 FILE_SUFFIX = "temp_log"
@@ -43,6 +41,7 @@ print("Starting continuous temperature logging...\n(Press Ctrl+C to stop)\n")
 cleanup_old_logs(LOG_FOLDER,LOG_RETENTION_DAYS)
 
 
+
 # === Main loop ===
 try:
     while True:
@@ -59,45 +58,7 @@ try:
         time.sleep(TIME_STEP)
 
         # Adjust for your actual Modbus ID range
-        for device_id in range(1, 2):
-            print(f"\nReading temperature data logger (TP-700) with Modbus ID = {device_id} ...")
-
-            try:
-                response = client.read_holding_registers(address=START_ADDR, count=REG_COUNT, device_id=device_id)
-            except Exception as e:
-                now = datetime.now().isoformat()
-                print(f"Exception reading device {device_id}: {e}")
-                with open(CSV_FILE, mode="a", newline="") as f:
-                    writer = csv.writer(f)
-                    writer.writerow([now, device_id] + ["Error"] * 24 + ["Comm Error"])
-                continue
-
-            regs = response.registers
-            if not regs or len(regs) < REG_COUNT:
-                print(f"Incomplete response from device {device_id}")
-                continue
-
-            print(f"Raw registers ({len(regs)}): {regs}")
-
-            # === Decode 24 temperature channels (big endian) ===
-            temps = []
-            for i in range(0, REG_COUNT, 2):
-                high = regs[i]
-                low = regs[i + 1]
-                bytes_be = struct.pack('>HH', high, low)   # pack as big-endian 16-bit words
-                temp_c = struct.unpack('>f', bytes_be)[0]  # unpack as 32-bit float BE
-                temps.append(temp_c)
-
-            now = datetime.now().isoformat()
-            print(f"Datetime: {now}")
-            for idx, t in enumerate(temps, start=1):
-                print(f"CH{idx:02d}: {t:.2f} °C")
-
-
-            # === Write to CSV ===
-            with open(CSV_FILE, mode="a", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow([now, device_id] + [round(t, 2) for t in temps] + ["No error"])
+        tp_700(client, START_ADDR, REG_COUNT, CSV_FILE, range(1, 2))
 
 
 
@@ -111,4 +72,3 @@ finally:
         # stdout/stderr already closed
         pass
     log_file.close()        # close the log file last
-    

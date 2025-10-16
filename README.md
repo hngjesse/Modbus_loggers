@@ -1,7 +1,7 @@
 
 # Modbus-based Data Logger
 
-This project is a **Python-based Modbus data logger** designed to read and record device's data from DCM 3366 DC meter connected via RS-485. It runs continuously on a **Linux-based mini PC (ECS-1841)** and automatically logs readings into daily `.log` files and monthly `.csv` files.
+This project is a **Python-based Modbus data logger** designed to read and record device's data via Modbus communication protocol. It runs continuously on a **Linux-based mini PC (ECS-1841)** and automatically logs readings into daily `.log` files and monthly `.csv` files.
 
 ---
 
@@ -56,7 +56,8 @@ Temp_logger/
 │       └── ...
 utils/
     ├── __init__.py
-    └── common_utils.py
+    ├── common_utils.py
+    └── device_specific_func.py
 ```
 
 ---
@@ -119,33 +120,32 @@ sudo systemctl status x_logger.service
 journalctl -u x_logger.service -f
 ```
 
----
 
-## Remove it from background service
+### Remove it from background service
 To remove a service from system completely, do the following.
 
-### Stop service
+- Stop service
 ```bash
 sudo systemctl stop x_logger.service
 ```
-### Disable it (remove system link)
+- Disable it (remove system link)
 
 ```bash
 sudo systemctl disable x_logger.service
 ```
 
-### Remove the service file
+- Remove the service file
 
 ```bash
 sudo rm /etc/systemd/system/x_logger.service
 ```
-### Reload the systemd daemon
+- Reload the systemd daemon
 
 ```bash
 sudo systemctl daemon-reload
 ```
 
-### Verify that it has been removed
+- Verify that it has been removed
 
 ```bash
 systemctl status x_logger.service
@@ -247,6 +247,7 @@ git push
 git clone https://github.com/<your_username>/Modbus_loggers.git
 ```
 
+---
 
 ## License
 

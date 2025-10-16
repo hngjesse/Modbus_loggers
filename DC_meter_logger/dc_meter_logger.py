@@ -1,14 +1,15 @@
 from pymodbus.client import ModbusSerialClient
 from datetime import datetime
-import csv
 import os
 import time
 import sys
-
 # === Add parent directory to sys.path for imports ===
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # === Import self-defined common utilities ===
 from utils.common_utils import get_csv_path, show_disk_usage_bar, get_log_path, cleanup_old_logs, log_rotation, Tee
+from utils.device_specific_func import DCM_3366
+
+
 
 
 # === Modbus connection setup ===
@@ -23,7 +24,7 @@ TIME_STEP = 2  # seconds between each read cycle
 
 LOG_RETENTION_DAYS = 30  # keep only last 30 days of log files
 
-BASE_FOLDER = "/mnt/data_storage/Modbus_loggers/DC_meter_logger"
+BASE_FOLDER = "/mnt/data_storage/Modbus_loggers_sandbox/DC_meter_logger"
 LOG_FOLDER = os.path.join(BASE_FOLDER, "logs")
 
 FILE_SUFFIX = "dc_meter_log"
@@ -59,55 +60,7 @@ try:
         time.sleep(TIME_STEP)
 
         # Adjust for your actual Modbus ID range
-        for device_id in range(1, 9):
-            print(f"\nReading DC meter (DCM3366) with Modbus ID = {device_id} ...")
-
-            try:
-                response = client.read_holding_registers(
-                    address=START_ADDR, count=REG_COUNT, device_id=device_id
-                )
-            except Exception as e:
-                print(f"Exception reading device {device_id}: {e}")
-                Forward_energy = Active_power = Current = Voltage = None
-                Error = "Error"
-                now = datetime.now().isoformat()
-                print(f"Datetime: {now}")
-                print(f"Forward energy (kWh): {Forward_energy}")
-                print(f"Active power (kW): {Active_power}")
-                print(f"Current (A): {Current}")
-                print(f"Voltage (V): {Voltage}")
-                with open(CSV_FILE, mode="a", newline="") as f:
-                    writer = csv.writer(f)
-                    writer.writerow([now, device_id, Forward_energy, Active_power, Current, Voltage, Error])
-                continue
-
-            regs = response.registers
-            print(f"Raw registers ({len(regs)}): {regs}")
-
-            Forward_energy = (regs[0] << 16) + regs[1]
-            Active_power = (regs[20] << 16) + regs[21]
-            Current = (regs[22] << 16) + regs[23]
-            Voltage = (regs[24] << 16) + regs[25]
-            Error = "No error"
-            now = datetime.now().isoformat()
-
-            print(f"Datetime: {now}")
-            print(f"Forward energy (kWh): {Forward_energy / 100:.3f}")
-            print(f"Active power (kW): {Active_power / 1000:.3f}")
-            print(f"Current (A): {Current / 10000:.3f}")
-            print(f"Voltage (V): {Voltage / 10000:.1f}")
-            with open(CSV_FILE, mode="a", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                    now,
-                    device_id,
-                    round(Forward_energy / 100, 3),
-                    round(Active_power / 1000, 3),
-                    round(Current / 10000, 3),
-                    round(Voltage / 10000, 1),
-                    Error
-                ])
-
+        DCM_3366(client, START_ADDR, REG_COUNT, CSV_FILE, range(1, 9))
 
 
 except KeyboardInterrupt:
