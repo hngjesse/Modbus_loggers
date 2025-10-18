@@ -86,7 +86,13 @@ cleanup_old_logs(LOG_FOLDER,LOG_RETENTION_DAYS)
 
 
 
-
+# === Connect client ===
+if not client.connect():
+    print(f"{datetime.now().isoformat()} ❌ Failed to connect to Modbus device.")
+    log_file.close()
+    sys.exit(1)
+else:
+    print("✅ Connected to Modbus device.")
 
 # === Main loop ===
 try:
