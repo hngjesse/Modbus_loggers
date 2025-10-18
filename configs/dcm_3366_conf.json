@@ -1,0 +1,24 @@
+{
+  "modbus": {
+    "type": "serial",          
+    "port": "/dev/ttyS0",     
+    "baudrate": 19200,
+    "timeout": 0.2,
+    "stopbits": 1,
+    "bytesize": 8,
+    "parity": "N"
+  },
+  "device": {
+    "name": "dcm_3366",
+    "start_addr": 0,
+    "reg_count": 40,
+    "id_range": [1,2,3,4,5,6,7,8]
+  },
+  "logging": {
+    "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/dcm_3366",
+    "log_retention_days": 30,
+    "file_suffix": "dc_meter",
+    "header": ["Datetime", "Device_ID", "Forward_energy_kWh", "Active_power_kW", "Current_A", "Voltage_V", "Error"],
+    "time_step": 2
+  }
+}

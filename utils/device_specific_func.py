@@ -54,7 +54,7 @@ def tp_700(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_file
 
 
 
-def DCM_3366(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_file: str, device_range: range) -> None:
+def dcm_3366(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_file: str, device_range: range) -> None:
     for device_id in device_range:
         print(f"\nReading DC meter (DCM3366) with Modbus ID = {device_id} ...")
 

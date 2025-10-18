@@ -1,0 +1,28 @@
+{
+  "modbus": {
+    "type": "tcp",
+    "timeout": 0.2,
+    "host": "192.168.1.10",
+    "port": 502
+  },
+  "device": {
+    "name": "tp_700",
+    "start_addr": 4097,
+    "reg_count": 48,
+    "id_range": [1,1]
+  },
+  "logging": {
+    "base_folder": "/mnt/data_storage/Modbus_loggers_sandbox/Temp_logger",
+    "log_retention_days": 30,
+    "file_suffix": "temp",
+    "header": ["Datetime", "Device_ID", 
+    "CH1_Temp", "CH2_Temp", "CH3_Temp", "CH4_Temp", 
+    "CH5_Temp", "CH6_Temp", "CH7_Temp", "CH8_Temp", 
+    "CH9_Temp", "CH10_Temp", "CH11_Temp", "CH12_Temp", 
+    "CH13_Temp", "CH14_Temp", "CH15_Temp", "CH16_Temp", 
+    "CH17_Temp", "CH18_Temp", "CH19_Temp", "CH20_Temp", 
+    "CH21_Temp", "CH22_Temp", "CH23_Temp", "CH24_Temp", 
+    "Error"],
+    "time_step": 2
+  }
+}

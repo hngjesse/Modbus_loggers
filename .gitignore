@@ -1,4 +1,19 @@
-*.log
-*.csv
+# Ignore system & editor files
 __pycache__/
-.env
+*.pyc
+*.pyo
+*.DS_Store
+.vscode/
+.idea/
+
+# Ignore local data and logs
+data_storage/
+*.csv
+*.log
+
+# Ignore virtual environments
+venv/
+.env/
+
+# Ignore temporary configs (if any)
+*.bak
