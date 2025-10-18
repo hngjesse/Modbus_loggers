@@ -1,10 +1,255 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="refresh" content="0; url=https://github.com/hngjesse/Modbus_loggers" />
-    <title>Redirecting...</title>
-  </head>
-  <body>
-    <p>If you are not redirected automatically, <a href="https://github.com/hngjesse/Modbus_loggers">click here</a>.</p>
-  </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modbus-based Data Logger | Hng Jesse</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: #f6f8fa;
+            color: #24292e;
+            line-height: 1.6;
+        }
+        header {
+            background-color: #24292e;
+            color: white;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        header h1 {
+            margin-bottom: 0.3rem;
+        }
+        header p a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        main {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        h1, h2, h3 {
+            color: #1f2328;
+        }
+        pre {
+            background-color: #f6f8fa;
+            border: 1px solid #d0d7de;
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        code {
+            background-color: #f6f8fa;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #d8dee4;
+            margin: 2rem 0;
+        }
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: #24292e;
+            color: #c9d1d9;
+            font-size: 0.9rem;
+        }
+        a {
+            color: #0969da;
+        }
+        @media (max-width: 700px) {
+            main {
+                padding: 1.2rem;
+                margin: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Modbus-based Data Logger</h1>
+    <p>
+        A flexible and Linux-ready data logging framework by 
+        <strong>Hng Jesse</strong><br>
+        <a href="https://github.com/hngjesse/Modbus_loggers" target="_blank">View Project on GitHub</a>
+    </p>
+</header>
+
+<main>
+    <h2>Overview</h2>
+    <p>
+        This project is a <strong>Python-based Modbus data logger</strong> designed to read and record data 
+        from multiple Modbus-compatible devices using either <strong>Modbus RTU (Serial)</strong> or 
+        <strong>Modbus TCP</strong>. It runs continuously on a 
+        <strong>Linux-based mini PC (ECS-1841)</strong> and automatically logs readings into daily 
+        <code>.log</code> and <code>.csv</code> files.
+    </p>
+
+    <hr>
+
+    <h2>Features</h2>
+    <ul>
+        <li>A single reusable script <code>modbus_logger.py</code> that supports multiple devices via config files.</li>
+        <li>Device-specific logic modularized under <code>utils/device_specific_func.py</code>.</li>
+        <li>Fully configurable setup via <strong>JSON</strong> (no hardcoded parameters).</li>
+        <li>Supports both <strong>Serial (RS485)</strong> and <strong>TCP</strong> Modbus connections.</li>
+        <li>Automatic daily CSV rotation and log cleanup.</li>
+        <li>Background execution via <code>systemd</code>.</li>
+        <li>Centralized utilities and validation functions under <code>utils/</code>.</li>
+    </ul>
+
+    <hr>
+
+    <h2>File Structure</h2>
+<pre><code>/mnt/data_storage/Modbus_loggers/
+│
+├── modbus_logger.py
+│
+├── configs/
+│   ├── tp_700_conf.json
+│   ├── dcm_3366_conf.json
+│   └── hoymile_dtu_pro_conf.json
+│
+├── utils/
+│   ├── common_utils.py
+│   ├── device_specific_func.py
+│   └── validate_config.py
+│
+├── logs/
+│   ├── 2025-10-18.log
+│   ├── 2025-10-19.log
+│   └── ...
+│
+├── data/
+│   ├── 2025/
+│   │   ├── 10/
+│   │   │   ├── 2025-10-18_temp.csv
+│   │   │   ├── 2025-10-18_dc_meter.csv
+│   │   │   └── ...
+│   └── 2026/
+│       └── ...
+</code></pre>
+
+    <hr>
+
+    <h2>Example Configuration Files</h2>
+
+    <h3>Modbus TCP</h3>
+<pre><code>{
+  "modbus": {
+    "type": "tcp",
+    "timeout": 0.2,
+    "host": "192.168.1.10",
+    "port": 502
+  },
+  "device": {
+    "name": "tp_700",
+    "start_addr": 4097,
+    "reg_count": 48,
+    "id_range": [1, 1]
+  },
+  "logging": {
+    "base_folder": "/mnt/data_storage/Modbus_loggers/data/temp_logger",
+    "log_retention_days": 30,
+    "file_suffix": "temp",
+    "header": ["Datetime", "Device_ID", "CH1_Temp", "CH2_Temp", "CH3_Temp", "Error"],
+    "time_step": 2
+  }
+}
+</code></pre>
+
+    <h3>Modbus RTU</h3>
+<pre><code>{
+  "modbus": {
+    "type": "serial",
+    "port": "/dev/ttyS0",
+    "baudrate": 19200,
+    "timeout": 0.2,
+    "stopbits": 1,
+    "bytesize": 8,
+    "parity": "N"
+  },
+  "device": {
+    "name": "dcm_3366",
+    "start_addr": 0,
+    "reg_count": 40,
+    "id_range": [1,2,3,4,5,6,7,8]
+  },
+  "logging": {
+    "base_folder": "/mnt/data_storage/Modbus_loggers/data/dcm_3366",
+    "log_retention_days": 30,
+    "file_suffix": "dc_meter",
+    "header": ["Datetime", "Device_ID", "Forward_energy_kWh", "Active_power_kW", "Current_A", "Voltage_V", "Error"],
+    "time_step": 2
+  }
+}
+</code></pre>
+
+    <hr>
+
+    <h2>Usage Instructions</h2>
+    <h3>Run manually</h3>
+<pre><code>python modbus_logger.py configs/x_conf.json</code></pre>
+
+    <h3>Run as a background service</h3>
+<pre><code>[Unit]
+Description=X Data Logger
+After=network.target
+
+[Service]
+Type=simple
+User=utar-mini-pc
+WorkingDirectory=/mnt/data_storage/Modbus_loggers
+ExecStart=/home/utar-mini-pc/anaconda3/envs/utar_py/bin/python modbus_logger.py configs/x_conf.json
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+
+    <p>To start:</p>
+<pre><code>sudo systemctl enable x_logger.service
+sudo systemctl start x_logger.service</code></pre>
+
+    <p>Check status or tail log:</p>
+<pre><code>sudo systemctl status x_logger.service
+journalctl -u x_logger.service -f</code></pre>
+
+    <hr>
+
+    <h2>Git Commands</h2>
+<pre><code>git init
+git branch -m main
+git remote add origin https://github.com/hngjesse/Modbus_loggers.git
+git add .
+git commit -m "Initial commit: Modbus logger with JSON config"
+git push -u origin main
+</code></pre>
+
+    <hr>
+
+    <h2>License</h2>
+    <p>This project is intended for internal use in industrial and solar monitoring systems.<br>
+    All rights reserved © 2025 — <strong>Hng Jesse</strong>.</p>
+
+</main>
+
+<footer>
+    Built and maintained by Hng Jesse ·
+    <a href="https://github.com/hngjesse" target="_blank" style="color:#58a6ff;">GitHub Profile</a>
+</footer>
+
+</body>
 </html>
