@@ -7,9 +7,9 @@
   },
   "device": {
     "name": "tp_700",
-    "start_addr": 4097,
+    "start_addr": 4096,
     "reg_count": 48,
-    "id_range": [1,1]
+    "id_range": [1]
   },
   "logging": {
     "base_folder": "/mnt/data_storage/Modbus_loggers_sandbox/Temp_logger",

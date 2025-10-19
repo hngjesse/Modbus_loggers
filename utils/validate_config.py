@@ -83,14 +83,23 @@ schema = {
 
 # --- Validator function ---
 def validate_config(config_path: str) -> dict:
-    """Validate and return JSON config."""
+    """Validate and return JSON config, with robust error handling."""
+
+    # --- Check file existence first ---
     try:
         with open(config_path, "r") as f:
             config = json.load(f)
+    except FileNotFoundError:
+        print(f"❌ Config file not found: {config_path}")
+        sys.exit(1)
+    except PermissionError:
+        print(f"❌ Permission denied when trying to read: {config_path}")
+        sys.exit(1)
     except json.JSONDecodeError as e:
         print(f"❌ JSON syntax error in {config_path}: {e}")
         sys.exit(1)
 
+    # --- Schema validation ---
     try:
         validate(instance=config, schema=schema)
     except ValidationError as e:
@@ -99,7 +108,6 @@ def validate_config(config_path: str) -> dict:
 
     print(f"✅ Config file '{config_path}' validated successfully.")
     return config
-
 
 # --- If run directly ---
 if __name__ == "__main__":

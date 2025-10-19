@@ -1,0 +1,21 @@
+{
+  "modbus": {
+    "type": "tcp",
+    "timeout": 0.2,
+    "host": "192.168.1.10",
+    "port": 502
+  },
+  "device": {
+    "name": "list_regis",
+    "start_addr": 4096,
+    "reg_count": 125,
+    "id_range": [1]
+  },
+  "logging": {
+    "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/list_regis",
+    "log_retention_days": 30,
+    "file_suffix": "temp",
+    "header": ["Datetime", "Device_ID"],
+    "time_step": 2
+  }
+}

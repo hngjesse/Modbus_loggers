@@ -12,7 +12,7 @@
     "name": "tp_700",
     "start_addr": 0,
     "reg_count": 48,
-    "id_range": [1,1]
+    "id_range": [1]
   },
   "logging": {
     "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/tp_700",
