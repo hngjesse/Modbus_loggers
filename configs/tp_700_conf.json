@@ -17,7 +17,7 @@
   "logging": {
     "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/tp_700",
     "log_retention_days": 30,
-    "file_suffix": "temp",
+    "file_suffix": "tp_700",
     "header": ["Datetime", "Device_ID", 
     "CH1_Temp", "CH2_Temp", "CH3_Temp", "CH4_Temp", 
     "CH5_Temp", "CH6_Temp", "CH7_Temp", "CH8_Temp", 

@@ -173,7 +173,7 @@ sudo systemctl status x_logger.service
 
 - Tail the log
 ```bash
-journalctl -u x_logger.service -f
+journalctl -u x_logger.service -f -o cat
 ```
 
 - Stop and remove the service

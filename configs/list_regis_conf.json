@@ -14,7 +14,7 @@
   "logging": {
     "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/list_regis",
     "log_retention_days": 30,
-    "file_suffix": "temp",
+    "file_suffix": "regis",
     "header": ["Datetime", "Device_ID"],
     "time_step": 2
   }

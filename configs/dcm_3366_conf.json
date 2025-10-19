@@ -17,7 +17,7 @@
   "logging": {
     "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/dcm_3366",
     "log_retention_days": 30,
-    "file_suffix": "dc_meter",
+    "file_suffix": "dcm_3366",
     "header": ["Datetime", "Device_ID", "Forward_energy_kWh", "Active_power_kW", "Current_A", "Voltage_V", "Error"],
     "time_step": 2
   }
