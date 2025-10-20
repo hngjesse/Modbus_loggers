@@ -1,14 +1,15 @@
-
 # Modbus-based Data Logger
 
 This project is a **Python-based Modbus data logger** designed to read and record device's data from multiple Modbus-compatible devices using either Modbus RTU (Serial) or Modbus TCP. It runs continuously on a **Linux-based mini PC (ECS-1841)** and automatically logs readings into daily `.log` and `.csv` files.
+
+More details are explained in my [Modbus Logger Project GitHub Page](https://hngjesse.github.io/Modbus_loggers/).
 
 ---
 
 ## Features
 
 - A single reusable script `modbus_logger.py` that supports multiple devices via configuration files.
-- Device-specific logic modularized under `utils/device_specific_func.py`
+- Customizable device-specific logic modularized under `utils/device_specific_func.py`
 - Fully configurable setup via **JSON**, no hardcoded parameters.
 - Supports both **Serial (RS485)** and **TCP** Modbus connections.
 - Automatic daily CSV rotation and log cleanup.
@@ -31,29 +32,12 @@ This project is a **Python-based Modbus data logger** designed to read and recor
 │   ├── dcm_3366_conf.json
 │   └── hoymile_dtu_pro_conf.json
 │
-├── utils/
-│   ├── __init__.py
-│   ├── common_utils.py
-│   ├── device_specific_func.py
-│   └── validate_config.py
-│
-├── logs/
-│   ├── 2025-10-18.log
-│   ├── 2025-10-19.log
-│   └── ...
-│
-├── data/
-│   ├── 2025/
-│   │   ├── 10/
-│   │   │   ├── 2025-10-18_temp.csv
-│   │   │   ├── 2025-10-18_dc_meter.csv
-│   │   │   └── ...
-│   │   └── 11/
-│   │       └── ...
-│   └── 2026/
-│       └── ...
-│
-└── README.md
+└── utils/
+    ├── __init__.py
+    ├── common_utils.py
+    ├── device_specific_func.py
+    └── validate_config.py
+
 ```
 
 ---
@@ -124,25 +108,25 @@ All device and communication settings are now handled in `.json` configuration f
 - Python 3.8+  
 - `pymodbus` (≥ 3.11.3)
 
-```bash
+```
 pip install pymodbus
 ```
 
 ### Run the script manually
-```bash
+```
 python modbus_logger.py configs/x_conf.json
 ```
 ### Run as a background service
 
 - Create a systemd service
 
-```bash
+```
 sudo nano /etc/systemd/system/x_logger.service
 ```
 
 - Then paste the following configuration.
 
-```bash
+```
 [Unit]
 Description=X Data Logger
 After=network.target
@@ -161,23 +145,23 @@ WantedBy=multi-user.target
 
 - Enable and start the service
 
-```bash
+```
 sudo systemctl enable x_logger.service
 sudo systemctl start x_logger.service
 ```
 
 - Check status of `x_logger.service`
-```bash
+```
 sudo systemctl status x_logger.service
 ```
 
 - Tail the log
-```bash
+```
 journalctl -u x_logger.service -f -o cat
 ```
 
 - Stop and remove the service
-```bash
+```
 sudo systemctl stop x_logger.service
 sudo systemctl disable x_logger.service
 sudo rm /etc/systemd/system/x_logger.service
@@ -185,7 +169,7 @@ sudo systemctl daemon-reload
 ```
 
 - Verify that it has been removed
-```bash
+```
 systemctl status x_logger.service
 ```
 
@@ -194,7 +178,7 @@ systemctl status x_logger.service
 ## Permissions
 
 - Make sure your user has access to the serial port
-```bash
+```
 sudo usermod -a -G dialout user
 ```
 
@@ -226,7 +210,7 @@ sudo usermod -a -G dialout user
 ---
 
 ## Initialize and Push
-```bash
+```
 cd /mnt/data_storage/Modbus_loggers
 git init
 git branch -m main
@@ -239,7 +223,7 @@ git push -u origin main
 ---
 
 ## Update repo
-```bash
+```
 git add .
 git commit -m "Updated configuration handling and utils"
 git push
@@ -248,7 +232,7 @@ git push
 ---
 
 ## Create a .gitignore file
-```bash
+```
 nano .gitignore
 ```
 ## Paste the following lines
@@ -277,7 +261,7 @@ venv/
 ---
 
 ## To clone this repo on another computer
-```bash
+```
 git clone https://github.com/hngjesse/Modbus_loggers.git
 ```
 
