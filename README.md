@@ -2,7 +2,7 @@
 
 This project is a **Python-based Modbus data logger** designed to read and record device's data from multiple Modbus-compatible devices using either Modbus RTU (Serial) or Modbus TCP. It runs continuously on a **Linux-based mini PC (ECS-1841)** and automatically logs readings into daily `.log` and `.csv` files.
 
-More details are explained in my [Modbus Logger Project GitHub Page](https://hngjesse.github.io/Modbus_loggers/).
+> More details are explained in my [Modbus Logger Project GitHub Page](https://hngjesse.github.io/Modbus_loggers/).
 
 ---
 
@@ -23,7 +23,7 @@ More details are explained in my [Modbus Logger Project GitHub Page](https://hng
 ## File Structure
 
 ```
-/mnt/data_storage/Modbus_loggers/
+Modbus_loggers/
 │
 ├── modbus_logger.py
 │
@@ -92,7 +92,8 @@ All device and communication settings are now handled in `.json` configuration f
     "base_folder": "/mnt/data_storage/Modbus_loggers/data/dcm_3366",
     "log_retention_days": 30,
     "file_suffix": "dc_meter",
-    "header": ["Datetime", "Device_ID", "Forward_energy_kWh", "Active_power_kW", "Current_A", "Voltage_V", "Error"],
+    "header": ["Datetime", "Device_ID", "Forward_energy_kWh", 
+    "Active_power_kW", "Current_A", "Voltage_V", "Error"],
     "time_step": 2
   }
 }
@@ -134,8 +135,8 @@ After=network.target
 [Service]
 Type=simple
 User=utar-mini-pc
-WorkingDirectory=/mnt/data_storage/Modbus_loggers
-ExecStart=/home/utar-mini-pc/anaconda3/envs/utar_py/bin/python modbus_logger.py configs/x_conf.json
+WorkingDirectory= path/to/your/Modbus_loggers
+ExecStart= path/to/your/environment/of/python modbus_logger.py configs/x_conf.json
 Restart=always
 RestartSec=2
 
