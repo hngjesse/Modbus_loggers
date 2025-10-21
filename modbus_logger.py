@@ -3,11 +3,9 @@ import sys
 import time
 import importlib
 import logging
-from datetime import datetime
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 from utils.validate_config import validate_config
-from utils.common_utils import get_csv_path_daily, show_disk_usage_bar, get_log_path, cleanup_old_logs
-
+from utils.common_utils import get_csv_path_daily, show_disk_usage_bar, get_log_path, cleanup_old_logs, set_log_file
 
 
 # --- Verify command-line argument ---
@@ -26,10 +24,20 @@ modbus_cfg = config["modbus"]
 device_cfg = config["device"]
 log_cfg = config["logging"]
 
+# === Device parameters ===
+START_ADDR = device_cfg["start_addr"]
+REG_COUNT = device_cfg["reg_count"]
+ID_RANGE = device_cfg["id_range"]
 
-# === Setup directories ===
+# === Logging parameters ===
+LOG_RETENTION_DAYS = log_cfg["log_retention_days"]
+FILE_SUFFIX = log_cfg["file_suffix"]
+HEADER = log_cfg.get("header", [])
+TIME_STEP = log_cfg["time_step"]
 BASE_FOLDER = log_cfg["base_folder"]
 LOG_FOLDER = os.path.join(BASE_FOLDER, "logs")
+
+
 os.makedirs(LOG_FOLDER, exist_ok=True)
 
 # === Configure logger ===
@@ -42,7 +50,6 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout),
     ],
 )
-
 
 logger = logging.getLogger(__name__)
 logger.info("[main] Starting Modbus Data Logger")
@@ -81,8 +88,6 @@ logger.info("[main] Connected to Modbus device successfully.")
 
 
 
-
-
 # === Dynamically import device-specific function ===
 try:
     device_module = importlib.import_module("utils.device_specific_func")
@@ -94,27 +99,15 @@ except (ImportError, AttributeError):
 
 
 
-# === Device parameters ===
-START_ADDR = device_cfg["start_addr"]
-REG_COUNT = device_cfg["reg_count"]
-ID_RANGE = device_cfg["id_range"]
 
-
-# === Logging parameters ===
-LOG_RETENTION_DAYS = log_cfg["log_retention_days"]
-FILE_SUFFIX = log_cfg["file_suffix"]
-HEADER = log_cfg.get("header", [])
-TIME_STEP = log_cfg["time_step"]
-
-current_log_date = datetime.now().date()
 
 # === Main loop ===
 try:
     while True:
-        now = datetime.now()
 
         # Rotate log daily
-        get_log_path(LOG_FOLDER)
+        new_log_path = get_log_path(LOG_FOLDER)
+        set_log_file(new_log_path)
         cleanup_old_logs(LOG_FOLDER, LOG_RETENTION_DAYS)
 
         # Prepare CSV
@@ -132,6 +125,7 @@ try:
             device_func(client, START_ADDR, REG_COUNT, CSV_FILE, ID_RANGE)
         except Exception as e:
             logger.error(f"[main] Error during Modbus read: {e}")
+
 
 except KeyboardInterrupt:
     logger.info("[main] 🛑 Stopped by user (Ctrl+C).")

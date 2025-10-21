@@ -71,7 +71,7 @@ schema = {
                 "header": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "minItems": 2
+                    "minItems": 0
                 },
                 "time_step": {"type": "number"}
             },

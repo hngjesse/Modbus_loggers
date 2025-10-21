@@ -5,6 +5,7 @@ import logging
 from datetime import datetime, timedelta
 
 
+
 def get_csv_path_daily(base_folder: str, file_suffix: str, header: list) -> str:
     """
     Create and return the CSV path for the current day, organized as:
@@ -71,6 +72,25 @@ def cleanup_old_logs(log_folder: str, log_retention_days: int) -> None:
         logging.info("[log] No old log files found to delete.")
     else:
         logging.info(f"[log] Deleted {deleted_count} old log file(s).")
+
+
+
+def set_log_file(new_log_path: str) -> None:
+    """Switch logging output to a new file."""
+    root_logger = logging.getLogger()
+
+    # 1️⃣ Remove old FileHandlers
+    for handler in root_logger.handlers[:]:
+        if isinstance(handler, logging.FileHandler):
+            root_logger.removeHandler(handler)
+            handler.close()  # close old file
+
+    # 2️⃣ Add new FileHandler
+    new_handler = logging.FileHandler(new_log_path, mode="a")
+    new_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    root_logger.addHandler(new_handler)
+
+
 
 
 def get_log_path(log_folder: str) -> str:
