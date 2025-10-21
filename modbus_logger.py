@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 from utils.validate_config import validate_config
-from utils.common_utils import get_csv_path_daily, show_disk_usage_bar, get_log_path, cleanup_old_logs, log_rotation
+from utils.common_utils import get_csv_path_daily, show_disk_usage_bar, get_log_path, cleanup_old_logs
 
 
 
@@ -47,7 +47,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("[main] Starting Modbus Data Logger")
 logger.info(f"[main] Using configuration file: {CONFIG_PATH}")
-cleanup_old_logs(LOG_FOLDER, log_cfg["log_retention_days"])
 
 
 # === Initialize Modbus client ===
@@ -115,12 +114,8 @@ try:
         now = datetime.now()
 
         # Rotate log daily
-        current_log_date, new_log_path = log_rotation(LOG_FOLDER, current_log_date, LOG_RETENTION_DAYS)
-        if new_log_path:
-            for h in logger.handlers:
-                if isinstance(h, logging.FileHandler):
-                    h.baseFilename = new_log_path
-                    logger.info(f"[main] Log file switched to: {new_log_path}")
+        get_log_path(LOG_FOLDER)
+        cleanup_old_logs(LOG_FOLDER, LOG_RETENTION_DAYS)
 
         # Prepare CSV
         CSV_FILE = get_csv_path_daily(base_folder = BASE_FOLDER, file_suffix = FILE_SUFFIX, header = HEADER)

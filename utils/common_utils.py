@@ -79,22 +79,6 @@ def get_log_path(log_folder: str) -> str:
     return os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d')}.log")
 
 
-def log_rotation(log_folder: str, current_log_date, log_retention_days) -> tuple:
-    """
-    Checks if a new day has started; rotates log files automatically.
-
-    Returns:
-        tuple: (new_log_date, new_log_path)
-    """
-    now = datetime.now()
-
-    if now.date() != current_log_date:
-        cleanup_old_logs(log_folder, log_retention_days)
-        new_log_path = get_log_path(log_folder)
-        logging.info(f"[log] New day detected — rotated log file for {now.strftime('%Y-%m-%d')}")
-        return now.date(), new_log_path
-
-    return current_log_date, None
 
 
 def show_disk_usage_bar(path: str = "/", bar_length: int = 40) -> None:
