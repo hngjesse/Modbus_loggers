@@ -1,6 +1,7 @@
 import struct
 import csv
 import logging
+import time
 from datetime import datetime
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 
@@ -34,6 +35,94 @@ def list_regis(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_
         except Exception as e:
             logger.error(f"[list_regis] Exception reading device {unit_id}: {e}")
 
+
+
+
+def hoymiles_dtu_p(client: ModbusTcpClient, start_addr: int, reg_count: int, csv_file: str, device_range: range) -> None:
+    regs_even = []
+    regs_odd = []
+
+    for i in device_range:
+        try:
+            # Read even registers
+            logger.info(f"[hoymiles_dtu_p] Collecting registers for device {i} ...")
+            response_even = client.read_holding_registers(address=start_addr + 40 * (i - 1), count=reg_count, device_id=1)
+            time.sleep(0.2)
+            # Read odd registers
+            response_odd = client.read_holding_registers(address=start_addr + 1 + 40 * (i - 1), count=reg_count, device_id=1)
+            
+            # Validate both responses
+            if response_even.isError() or response_odd.isError():
+                raise ValueError("Modbus read error detected")
+
+            regs_even.append(response_even.registers + [datetime.now().strftime("%Y-%m-%dT%H:%M:%S")])
+            regs_odd.append(response_odd.registers + [datetime.now().strftime("%Y-%m-%dT%H:%M:%S")])
+
+            time.sleep(0.2)
+
+        except Exception as e:
+            logger.error(f"[hoymiles_dtu_p] Failed to read registers: {e}")
+            now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            with open(csv_file, mode="a", newline="") as f:
+                csv.writer(f).writerow([now, f"Device {i}", None, None, None, None, None, None, None, None, None, "Read error"])
+            continue
+
+    # Parse collected data
+    for i in device_range:
+        try:
+            chunk_size = 11  # how many registers per line
+            logger.info(f"[tp_700] Raw even registers ({len(regs_even[i-1])}):")
+
+            for j in range(0, len(regs_even[i-1]), chunk_size):
+                chunk = regs_even[i-1][j:j + chunk_size]
+                logger.info("[tp_700] [" + ", ".join(f"{r}" for r in chunk) + "]")
+
+            logger.info(f"[tp_700] Raw even registers ({len(regs_odd[i-1])}):")
+            for j in range(0, len(regs_odd[i-1]), chunk_size):
+                chunk = regs_even[i-1][j:j + chunk_size]
+                logger.info("[tp_700] [" + ", ".join(f"{r}" for r in chunk) + "]")
+            
+            now = regs_even[i - 1][20]
+            serial_number = b''.join(struct.pack('>H', r) for r in regs_odd[i - 1][0:4]).hex()
+            pv_voltage = regs_even[i - 1][4] / 10
+            pv_current = regs_even[i - 1][5] / 100
+            grid_voltage = regs_even[i - 1][6] / 10
+            grid_freq = regs_even[i - 1][7] / 100
+            pv_power = regs_even[i - 1][8] / 10
+            today_prod = regs_even[i - 1][9]
+            total_prod = None
+            temperature = regs_even[i - 1][12] / 10
+            operating_status1 = regs_even[i - 1][13]
+            Error = "No error"
+
+            logger.info(f"[hoymiles_dtu_p] Datetime         : {now}")
+            logger.info(f"[hoymiles_dtu_p] Serial Number    : {serial_number}")
+            logger.info(f"[hoymiles_dtu_p] PV Voltage [V]   : {pv_voltage}")
+            logger.info(f"[hoymiles_dtu_p] PV Current [A]   : {pv_current}")
+            logger.info(f"[hoymiles_dtu_p] PV Power [W]     : {pv_power}")
+            logger.info(f"[hoymiles_dtu_p] Temp [°C]        : {temperature}")
+            logger.info(f"[hoymiles_dtu_p] Operating Status : {operating_status1}")
+
+            with open(csv_file, mode="a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    now, serial_number,
+                    round(pv_voltage, 3),
+                    round(pv_current, 3),
+                    round(pv_power, 3),
+                    round(temperature, 3),
+                    round(grid_voltage, 3),
+                    round(grid_freq, 3),
+                    round(today_prod, 3),
+                    total_prod,
+                    operating_status1,
+                    Error
+                ])
+
+        except IndexError as e:
+            logger.error(f"[hoymiles_dtu_p] Index error while parsing data: {e}")
+        except Exception as e:
+            logger.error(f"[hoymiles_dtu_p] Unexpected error during parsing: {e}")
 
 
 

@@ -117,14 +117,16 @@ try:
         show_disk_usage_bar("/")
         show_disk_usage_bar("/mnt/data_storage")
 
-        logger.info(f"[main] Waiting {TIME_STEP} seconds before next read cycle...")
-        time.sleep(TIME_STEP)
+       
 
         # Read Modbus data
         try:
             device_func(client, START_ADDR, REG_COUNT, CSV_FILE, ID_RANGE)
         except Exception as e:
             logger.error(f"[main] Error during Modbus read: {e}")
+
+        logger.info(f"[main] Waiting {TIME_STEP} seconds before next read cycle...")
+        time.sleep(TIME_STEP)
 
 
 except KeyboardInterrupt:
