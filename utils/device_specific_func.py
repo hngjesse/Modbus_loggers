@@ -2,6 +2,7 @@ import struct
 import csv
 import logging
 import time
+import sys
 from datetime import datetime
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 
@@ -38,84 +39,101 @@ def list_regis(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_
 
 
 
-def hoymiles_dtu_p(client: ModbusTcpClient, start_addr: int, reg_count: int, csv_file: str, device_range: range) -> None:
-    regs_even = []
-    regs_odd = []
+def hoymiles_dtu_p(client: ModbusTcpClient, start_addr: int, reg_count: int,
+                   csv_file: str, device_range: range) -> None:
+    regs = []
 
     for i in device_range:
-        try:
-            # Read even registers
-            logger.info(f"[hoymiles_dtu_p] Collecting registers for device {i} ...")
-            response_even = client.read_holding_registers(address=start_addr + 40 * (i - 1), count=reg_count, device_id=1)
-            time.sleep(0.2)
-            # Read odd registers
-            response_odd = client.read_holding_registers(address=start_addr + 1 + 40 * (i - 1), count=reg_count, device_id=1)
-            
-            # Validate both responses
-            if response_even.isError() or response_odd.isError():
-                raise ValueError("Modbus read error detected")
+        logger.info(f"[hoymiles_dtu_p] Collecting registers for device {i} ...")
+        time.sleep(0.2)  # brief pause between devices
 
-            regs_even.append(response_even.registers + [datetime.now().strftime("%Y-%m-%dT%H:%M:%S")])
-            regs_odd.append(response_odd.registers + [datetime.now().strftime("%Y-%m-%dT%H:%M:%S")])
+        max_retries = 10
+        attempt = 0
+        success = False
 
-            time.sleep(0.2)
+        while attempt < max_retries:
+            try:
+                response = client.read_input_registers(
+                    address=start_addr + 96 * (i - 1),
+                    count=reg_count,
+                    device_id=1
+                )
 
-        except Exception as e:
-            logger.error(f"[hoymiles_dtu_p] Failed to read registers: {e}")
-            now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-            with open(csv_file, mode="a", newline="") as f:
-                csv.writer(f).writerow([now, f"Device {i}", None, None, None, None, None, None, None, None, None, "Read error"])
-            continue
+                # Validate response
+                if not response or response.isError():
+                    attempt += 1
+                    logger.warning(f"[hoymiles_dtu_p] Attempt {attempt}/{max_retries} failed for device {i}, retrying...")
+                    time.sleep(2)
+                    continue
 
-    # Parse collected data
+                # Got valid data
+                regs.append(response.registers + [datetime.now().strftime("%Y-%m-%dT%H:%M:%S")])
+                success = True
+                break  # stop retrying, move to next device
+
+            except Exception as e:
+                attempt += 1
+                logger.error(f"[hoymiles_dtu_p] Exception on attempt {attempt}/{max_retries} for device {i}: {e}")
+                time.sleep(2)
+
+        if not success:
+            logger.critical(f"[hoymiles_dtu_p] Failed to read device {i} after {max_retries} attempts. Shutting down system...")
+            client.close()  # Close connection cleanly
+            sys.exit(1)     # Exit the entire program
+
+    # --- Parse and log data ---
     for i in device_range:
         try:
-            chunk_size = 11  # how many registers per line
-            logger.info(f"[tp_700] Raw even registers ({len(regs_even[i-1])}):")
+            data = regs[i - 1]
 
-            for j in range(0, len(regs_even[i-1]), chunk_size):
-                chunk = regs_even[i-1][j:j + chunk_size]
-                logger.info("[tp_700] [" + ", ".join(f"{r}" for r in chunk) + "]")
+            if not isinstance(data, list) or len(data) < 41:
+                logger.error(f"[hoymiles_dtu_p] Invalid data length for device {i}: {len(data)}")
+                continue
 
-            logger.info(f"[tp_700] Raw even registers ({len(regs_odd[i-1])}):")
-            for j in range(0, len(regs_odd[i-1]), chunk_size):
-                chunk = regs_even[i-1][j:j + chunk_size]
-                logger.info("[tp_700] [" + ", ".join(f"{r}" for r in chunk) + "]")
-            
-            now = regs_even[i - 1][20]
-            serial_number = b''.join(struct.pack('>H', r) for r in regs_odd[i - 1][0:4]).hex()
-            pv_voltage = regs_even[i - 1][4] / 10
-            pv_current = regs_even[i - 1][5] / 100
-            grid_voltage = regs_even[i - 1][6] / 10
-            grid_freq = regs_even[i - 1][7] / 100
-            pv_power = regs_even[i - 1][8] / 10
-            today_prod = regs_even[i - 1][9]
-            total_prod = None
-            temperature = regs_even[i - 1][12] / 10
-            operating_status1 = regs_even[i - 1][13]
+            # Helper for safe division
+            def safe_div(value, divisor):
+                return round(value / divisor, 2) if isinstance(value, (int, float)) else None
+
+            now = data[-1]  # timestamp
+            serial_number = b''.join(struct.pack('>H', r) for r in data[0:3]).hex()
+            total_prod = (data[3] << 16) + data[4]
+            today_prod = (data[5] << 16) + data[6]
+            temp = safe_div(data[20], 10)
+
+            # PV1–PV4 values
+            PV = {}
+            for n in range(4):
+                base = 21 + n * 3
+                PV[f"V{n+1}"] = safe_div(data[base], 10)
+                PV[f"I{n+1}"] = safe_div(data[base + 1], 100)
+                PV[f"P{n+1}"] = safe_div(data[base + 2], 10)
+
+            operating_status = data[39] if len(data) > 39 else None
             Error = "No error"
 
+            # --- Logging values ---
             logger.info(f"[hoymiles_dtu_p] Datetime         : {now}")
             logger.info(f"[hoymiles_dtu_p] Serial Number    : {serial_number}")
-            logger.info(f"[hoymiles_dtu_p] PV Voltage [V]   : {pv_voltage}")
-            logger.info(f"[hoymiles_dtu_p] PV Current [A]   : {pv_current}")
-            logger.info(f"[hoymiles_dtu_p] PV Power [W]     : {pv_power}")
-            logger.info(f"[hoymiles_dtu_p] Temp [°C]        : {temperature}")
-            logger.info(f"[hoymiles_dtu_p] Operating Status : {operating_status1}")
+            logger.info(f"[hoymiles_dtu_p] Total Prod [Wh]  : {total_prod}")
+            logger.info(f"[hoymiles_dtu_p] Today Prod [Wh]  : {today_prod}")
+            logger.info(f"[hoymiles_dtu_p] Temp [°C]        : {temp}")
+            logger.info(f"[hoymiles_dtu_p] PV Voltage [V]   : {', '.join(str(PV[f'V{n+1}']) for n in range(4))}")
+            logger.info(f"[hoymiles_dtu_p] PV Current [A]   : {', '.join(str(PV[f'I{n+1}']) for n in range(4))}")
+            logger.info(f"[hoymiles_dtu_p] PV Power   [W]   : {', '.join(str(PV[f'P{n+1}']) for n in range(4))}")
+            logger.info(f"[hoymiles_dtu_p] Operating Status : {operating_status}")
 
+            # --- Write to CSV ---
             with open(csv_file, mode="a", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow([
                     now, serial_number,
-                    round(pv_voltage, 3),
-                    round(pv_current, 3),
-                    round(pv_power, 3),
-                    round(temperature, 3),
-                    round(grid_voltage, 3),
-                    round(grid_freq, 3),
-                    round(today_prod, 3),
-                    total_prod,
-                    operating_status1,
+                    round(total_prod, 1),
+                    round(today_prod, 1),
+                    temp,
+                    *(PV[f"V{n+1}"] for n in range(4)),
+                    *(PV[f"I{n+1}"] for n in range(4)),
+                    *(PV[f"P{n+1}"] for n in range(4)),
+                    operating_status,
                     Error
                 ])
 
@@ -126,63 +144,90 @@ def hoymiles_dtu_p(client: ModbusTcpClient, start_addr: int, reg_count: int, csv
 
 
 
-
 def tp_700(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_file: str, device_range: range) -> None:
     for unit_id in device_range:
         logger.info(f"[tp_700] Reading temperature data logger (TP-700) with Modbus ID = {unit_id} ...")
 
         try:
-            response = client.read_holding_registers(address=start_addr, count=reg_count, device_id=unit_id)
+            response = client.read_holding_registers(address=start_addr,count=reg_count,device_id=unit_id)
+
+            # --- Validate response ---
+            if not response or response.isError():
+                raise ValueError(f"Invalid or no Modbus response from device {unit_id}")
+
+            regs = response.registers
+            if not regs or len(regs) < reg_count:
+                raise ValueError(f"Incomplete response from device {unit_id}")
+
         except Exception as e:
-            logger.info(f"[tp_700] Exception reading device {unit_id}: {e}")
+            # Record error with None values, then exit
+            now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            logger.error(f"[tp_700] Error reading device {unit_id}: {e}")
             temps = [None] * 24
             Error = "Error"
-            now = datetime.now().isoformat()
+
             logger.info(f"[tp_700] Datetime: {now}")
-            for i in range(0, len(temps), 6):  # step by 6
-                row = temps[i:i+6]
+            for i in range(0, len(temps), 6):
+                row = temps[i:i + 6]
                 logger.info("[tp_700] " + "  ".join(f"CH{i+j+1:02d}: {t}" for j, t in enumerate(row)))
 
+            # Write record before exit
             with open(csv_file, mode="a", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow([now, unit_id] + temps + [Error])
-            continue
 
-        regs = response.registers
-        if not regs or len(regs) < reg_count:
-            logger.info(f"[tp_700] Incomplete response from device {unit_id}")
-            continue
+            # Close client and exit system
+            client.close()
+            sys.exit(1)
 
-
+        # --- Log raw registers ---
         logger.info(f"[tp_700] Raw registers ({len(regs)}):")
-
-        chunk_size = 10  # how many registers per line
+        chunk_size = 10
         for i in range(0, len(regs), chunk_size):
             chunk = regs[i:i + chunk_size]
             logger.info("[tp_700] [" + ", ".join(f"{r}" for r in chunk) + "]")
 
+        # --- Decode 24 temperature channels (big endian) ---
+        try:
+            temps = []
+            for i in range(0, reg_count, 2):
+                high = regs[i]
+                low = regs[i + 1]
+                bytes_be = struct.pack('>HH', high, low)
+                temp_c = struct.unpack('>f', bytes_be)[0]
+                temps.append(temp_c)
+        except Exception as e:
+            # If decode fails, log and exit after recording None
+            now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            logger.critical(f"[tp_700] Error decoding data for device {unit_id}: {e}")
+            temps = [None] * 24
+            Error = "Decode error"
 
+            with open(csv_file, mode="a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([now, unit_id] + temps + [Error])
 
+            client.close()
+            sys.exit(1)
 
-        # === Decode 24 temperature channels (big endian) ===
-        temps = []
-        for i in range(0, reg_count, 2):
-            high = regs[i]
-            low = regs[i + 1]
-            bytes_be = struct.pack('>HH', high, low)   # pack as big-endian 16-bit words
-            temp_c = struct.unpack('>f', bytes_be)[0]  # unpack as 32-bit float BE
-            temps.append(temp_c)
+        # --- Normal operation ---
+        now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         Error = "No error"
-        now = datetime.now().isoformat()
         logger.info(f"[tp_700] Datetime: {now}")
-        for i in range(0, len(temps), 6):  # step by 6
-            row = temps[i:i+6]
+        for i in range(0, len(temps), 6):
+            row = temps[i:i + 6]
             logger.info("[tp_700] " + "  ".join(f"CH{i+j+1:02d}: {t:.2f} °C" for j, t in enumerate(row)))
 
-        # === Write to CSV ===
-        with open(csv_file, mode="a", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow([now, unit_id] + [round(t, 2) for t in temps] + [Error])
+        # --- Write to CSV ---
+        try:
+            with open(csv_file, mode="a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([now, unit_id] + [round(t, 2) for t in temps] + [Error])
+        except Exception as e:
+            logger.critical(f"[tp_700] Failed to write to CSV: {e}")
+            client.close()
+            sys.exit(1)
+
 
 
 def dcm_3366(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_file: str, device_range: range) -> None:
@@ -199,27 +244,37 @@ def dcm_3366(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_fi
             Forward_energy = Active_power = Current = Voltage = None
             Error = "Error"
             now = datetime.now().isoformat()
+
             logger.info(f"[dcm_3366] Datetime: {now}")
             logger.info(f"[dcm_3366] Forward energy (kWh): {Forward_energy}")
             logger.info(f"[dcm_3366] Active power (kW): {Active_power}")
             logger.info(f"[dcm_3366] Current (A): {Current}")
             logger.info(f"[dcm_3366] Voltage (V): {Voltage}")
+
+            # Append to CSV with None values
             with open(csv_file, mode="a", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow([now, device_id, Forward_energy, Active_power, Current, Voltage, Error])
-            continue
 
+            # Cleanly close client before exit
+            try:
+                if client.is_socket_open():
+                    client.close()
+                    logger.info("[dcm_3366] Modbus client closed due to error.")
+            except Exception as close_err:
+                logger.info(f"[dcm_3366] Error while closing client: {close_err}")
+
+            logger.info("[dcm_3366] Exiting system due to critical read error.")
+            sys.exit(1)
+
+        # === Decode normal data ===
         regs = response.registers
-
-        # Pretty-print raw register values in multiple lines
-
         logger.info(f"[dcm_3366] Raw registers ({len(regs)}):")
 
-        chunk_size = 20  # how many registers per line
+        chunk_size = 20
         for i in range(0, len(regs), chunk_size):
             chunk = regs[i:i + chunk_size]
             logger.info("[dcm_3366] [" + ", ".join(f"{r}" for r in chunk) + "]")
-
 
         Forward_energy = (regs[0] << 16) + regs[1]
         Active_power = (regs[20] << 16) + regs[21]
@@ -233,6 +288,7 @@ def dcm_3366(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_fi
         logger.info(f"[dcm_3366] Active power (kW): {Active_power / 1000:.3f}")
         logger.info(f"[dcm_3366] Current (A): {Current / 10000:.3f}")
         logger.info(f"[dcm_3366] Voltage (V): {Voltage / 10000:.1f}")
+
         with open(csv_file, mode="a", newline="") as f:
             writer = csv.writer(f)
             writer.writerow([

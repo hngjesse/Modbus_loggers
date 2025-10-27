@@ -2,24 +2,25 @@
   "modbus": {
     "type": "tcp",
     "timeout": 0.2,
-    "host": "192.168.1.10",
+    "host": "192.168.1.17",
     "port": 502
   },
   "device": {
     "name": "hoymiles_dtu_p",
-    "start_addr": 4096,
-    "reg_count": 20,
-    "id_range": [1,2,3,4,5,6,7,8,
-                9,10,11,12,13,14,15,16]
+    "start_addr": 14560,
+    "reg_count": 40,
+    "id_range": [1,2,3,4,5,6]
   },
   
   "logging": {
-    "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/hoymiles_dtu_p",
+    "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/hoymiles_dtu_p/",
     "log_retention_days": 30,
     "file_suffix": "hoymiles_dtu_p",
-    "header": ["Datetime", "Serial Number", 
-    "Voltage_V", "Current_A", "Power_W", "Temp_C", 
-    "Grid_Voltage_V", "Grid_Freq_Hz", "Today_Prod_Wh", "Total_Prod_Wh","Operating_Status",
+    "header": ["Datetime", "Serial Number","Total_Prod_Wh", "Today_Prod_Wh", "Temp_C", 
+    "PV1_V", "PV2_V", "PV3_V", "PV4_V",
+    "PV1_A", "PV2_A", "PV3_A", "PV4_A",
+    "PV1_W", "PV2_W", "PV3_W", "PV4_W",
+    "Operating_Status",
     "Error"],
     "time_step": 2
   }
