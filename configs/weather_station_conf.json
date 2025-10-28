@@ -1,0 +1,30 @@
+{
+  "modbus": {
+    "type": "serial",           
+    "port": "/dev/ttyUSB0",        
+    "baudrate": 9600,
+    "timeout": 0.2,
+    "stopbits": 1,
+    "bytesize": 8,
+    "parity": "N"
+  },
+  "device": {
+    "name": "list_regis",
+    "start_addr": 14,
+    "reg_count": 44,
+    "id_range": [1]
+  },
+  "logging": {
+    "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/weather_station",
+    "log_retention_days": 30,
+    "file_suffix": "weather_station",
+    "header": [
+      "Datetime", "Device_ID",
+      "Weat:GHI", "Weat:DHI", "Weat:DNI", "Weat:GTI",
+      "Weat:WindDir", "Weat:WindSpeed", "Weat:WindSpeed_2", "Weat:WindSpeed_10",
+      "Weat:AirTemp", "Weat:Humidity", "Weat:AirPres",
+      "Error"
+    ],
+    "time_step": 2
+  }
+}
