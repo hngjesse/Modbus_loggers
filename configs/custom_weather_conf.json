@@ -9,15 +9,15 @@
     "parity": "N"
   },
   "device": {
-    "name": "list_regis",
+    "name": "custom_weather",
     "start_addr": 14,
-    "reg_count": 44,
+    "reg_count": 45,
     "id_range": [1]
   },
   "logging": {
-    "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/weather_station",
+    "base_folder": "/mnt/data_storage/Modbus_loggers/data_storage/custom_weather",
     "log_retention_days": 30,
-    "file_suffix": "weather_station",
+    "file_suffix": "custom_weather",
     "header": [
       "Datetime", "Device_ID",
       "Weat:GHI", "Weat:DHI", "Weat:DNI", "Weat:GTI",

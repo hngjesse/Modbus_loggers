@@ -300,3 +300,111 @@ def dcm_3366(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_fi
                 round(Voltage / 10000, 1),
                 Error
             ])
+
+
+
+
+def custom_weather(client: ModbusSerialClient, start_addr: int, reg_count: int, csv_file: str, device_range: range) -> None:
+    """Read weather station data and save readings."""
+    for device_id in device_range:
+        logger.info(f"[custom_weather] Reading Weather Station with Modbus ID = {device_id} ...")
+
+        try:
+            response = client.read_holding_registers(
+                address=start_addr, count=reg_count, device_id=device_id
+            )
+        except Exception as e:
+            logger.info(f"[custom_weather] Exception reading device {device_id}: {e}")
+            now = datetime.now().isoformat()
+            logger.info(f"[custom_weather] Datetime: {now}")
+            logger.info(f"[custom_weather] Error: {e}")
+
+            with open(csv_file, mode="a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    now, device_id,
+                    None, None, None, None,    # GHI, DHI, DNI, GTI
+                    None, None, None, None,    # WindDir, WindSpeed, WindSpeed_2, WindSpeed_10
+                    None, None, None,          # AirTemp, Humidity, AirPres
+                    "Error"
+                ])
+
+            try:
+                if client.is_socket_open():
+                    client.close()
+                    logger.info("[custom_weather] Modbus client closed due to error.")
+            except Exception as close_err:
+                logger.info(f"[custom_weather] Error while closing client: {close_err}")
+
+            sys.exit(1)
+
+        # === Decode normal data ===
+        regs = response.registers
+        logger.info(f"[custom_weather] Raw registers ({len(regs)}):")
+
+        chunk_size = 20
+        for i in range(0, len(regs), chunk_size):
+            chunk = regs[i:i + chunk_size]
+            logger.info("[custom_weather] [" + ", ".join(f"{r}" for r in chunk) + "]")
+
+        # The order follows your XML <Point> tag definitions
+        GHI         = regs[0]   # 40015
+        DHI         = regs[1]   # 40016
+        DNI         = regs[2]   # 40017
+        GTI         = regs[3]   # 40018
+        WindDir     = regs[7]   # 40022
+        WindSpeed   = regs[8]   # 40023
+        WindSpeed_2 = regs[9]  # 40024
+        WindSpeed_10= regs[10]  # 40025
+        AirTemp     = regs[30]  # 40045
+        Humidity    = regs[37]  # 40052
+        AirPres     = regs[43]  # 40058
+
+        # Example scaling (assuming raw values are 0–1000 range as per XML span_high)
+        # Adjust scale factors below based on actual sensor register documentation
+        GHI         = GHI
+        DHI         = DHI
+        DNI         = DNI
+        GTI         = GTI
+        WindDir     = WindDir
+        WindSpeed   = WindSpeed / 10.0
+        WindSpeed_2 = WindSpeed_2 / 10.0
+        WindSpeed_10= WindSpeed_10 / 10.0
+        AirTemp     = AirTemp / 10.0
+        Humidity    = Humidity / 10.0
+        AirPres     = AirPres / 10.0
+
+        Error = "No error"
+        now = datetime.now().isoformat()
+
+        logger.info(f"[custom_weather] Datetime: {now}")
+        logger.info(f"[custom_weather] GHI: {GHI} W/m^2")
+        logger.info(f"[custom_weather] DHI: {DHI} W/m^2")
+        logger.info(f"[custom_weather] DNI: {DNI} W/m^2")
+        logger.info(f"[custom_weather] GTI: {GTI} W/m^2")
+        logger.info(f"[custom_weather] WindDir: {WindDir} deg")
+        logger.info(f"[custom_weather] WindSpeed: {WindSpeed}")
+        logger.info(f"[custom_weather] WindSpeed_2: {WindSpeed_2}")
+        logger.info(f"[custom_weather] WindSpeed_10: {WindSpeed_10}")
+        logger.info(f"[custom_weather] AirTemp: {AirTemp} deg_C")
+        logger.info(f"[custom_weather] Humidity: {Humidity} %")
+        logger.info(f"[custom_weather] AirPres: {AirPres} hPa")
+
+        with open(csv_file, mode="a", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                now,
+                device_id,
+                round(GHI, 2),
+                round(DHI, 2),
+                round(DNI, 2),
+                round(GTI, 2),
+                round(WindDir, 1),
+                round(WindSpeed, 2),
+                round(WindSpeed_2, 2),
+                round(WindSpeed_10, 2),
+                round(AirTemp, 1),
+                round(Humidity, 1),
+                round(AirPres, 1),
+                Error
+            ])
